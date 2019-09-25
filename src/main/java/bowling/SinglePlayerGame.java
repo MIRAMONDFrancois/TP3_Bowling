@@ -12,33 +12,28 @@ public class SinglePlayerGame {
 	/**
 	 * Constructeur
 	 */
-        private int NB_QUILLES;
-        private int NB_TOURS;
         private ArrayList<Integer> listeScore;
         private ArrayList<String> listeScoreEtat;
-        private int toursRestants;
-        private int round;
-        private int quillesRestantes;
+        private int TURN_MAX;
+        private int TURN_N;
+        private int QUILLES_MAX;
+        private int QUILLES;
+        private int ROUND = 1;
     
 	public SinglePlayerGame() {
-            NB_TOURS = 10;
-            toursRestants = NB_TOURS;
-            round = 1;
-            NB_QUILLES = 10;
-            quillesRestantes = NB_QUILLES;
-            listeScore = new ArrayList<Integer>(NB_TOURS+2);
-            listeScoreEtat = new ArrayList<String>(NB_TOURS+2);
+            TURN_MAX = 10;
+            TURN_N = 0;
+            QUILLES_MAX = 10;
+            QUILLES = QUILLES_MAX;
+            ROUND = 1;
+            listeScore = new ArrayList<Integer>();
+            listeScoreEtat = new ArrayList<String>();
 	}
         
         private void NextTurn() {
-            System.out.println("Fin du tour. " + toursRestants + " tours restants.");
-            quillesRestantes = NB_QUILLES;
-            if (toursRestants == 0) {
-                System.out.println("Fin, calcul du score.");
-                score();
-            } else {
-                toursRestants--;                
-            }
+            TURN_N++;
+            ROUND = 1;
+            QUILLES = QUILLES_MAX;
         }
 
 	/**
@@ -48,82 +43,34 @@ public class SinglePlayerGame {
 	 * ce lancé
 	 */
 	public void lancer(int nombreDeQuillesAbattues) {
-            if (nombreDeQuillesAbattues >= 0 && nombreDeQuillesAbattues <= quillesRestantes) {
-                quillesRestantes -= nombreDeQuillesAbattues;
-                if (quillesRestantes == 0) {
-                    if (toursRestants > 1) {
-                        switch (round) {
-                            case 1:
-                                System.out.println("STRIKE");
-                                listeScore.set(NB_TOURS-toursRestants, 10);
-                                listeScoreEtat.set(NB_TOURS-toursRestants, "STRIKE");
-                            case 2:
-                                System.out.println("SPARE");
-                                listeScore.set(NB_TOURS-toursRestants, 10);
-                                listeScoreEtat.set(NB_TOURS-toursRestants, "SPARE");
-                        }
-                        NextTurn();
-                    } else { //Dernier tour
-                        switch (round) {
-                            case 1:
-                                System.out.println("STRIKE");
-                                listeScore.set(NB_TOURS-toursRestants, 10);
-                                listeScoreEtat.set(NB_TOURS-toursRestants, "STRIKE");
-                                round = 2;
-                                break;
-                            case 2:
-                                if (nombreDeQuillesAbattues == 10) {
-                                    System.out.println("STRIKE");
-                                    listeScore.set(NB_TOURS, 10);
-                                    listeScoreEtat.set(NB_TOURS, "STRIKE");
-                                } else {
-                                    System.out.println("SPARE");
-                                    listeScore.set(NB_TOURS, 10);
-                                    listeScoreEtat.set(NB_TOURS, "SPARE");
-                                }
-                                round = 3;
-                                break;
-                            case 3:
-                                System.out.println("STRIKE");
-                                listeScore.set(NB_TOURS+1, 10);
-                                listeScoreEtat.set(NB_TOURS+1, "STRIKE");
-                                NextTurn();
-                                break;
-                        }
-                    }
+            listeScore.add(nombreDeQuillesAbattues);
+            if (nombreDeQuillesAbattues == 10) {
+                // STRIKE
+                listeScoreEtat.add("STRIKE");    
+            } else {
+                if (nombreDeQuillesAbattues + QUILLES == 10) {
+                    // SPARE
+                    listeScoreEtat.add("SPARE");
                 } else {
-                    if (toursRestants > 1) {
-                        switch (round) {
-                            case 1:
-                                round = 2;
-                                break;
-                            case 2:
-                                NextTurn();
-                                listeScore.set(NB_TOURS-toursRestants, NB_QUILLES-quillesRestantes);
-                                listeScoreEtat.set(NB_TOURS-toursRestants, "x");
-                                break;
-                        }
-                    } else { //Dernier tour
-                        switch (round) {
-                            case 1:
-                                round = 2;
-                                break;
-                            case 2:
-                                NextTurn();
-                                listeScore.set(NB_TOURS-toursRestants, NB_QUILLES-quillesRestantes);
-                                listeScoreEtat.set(NB_TOURS-toursRestants, "x");
-                                break;
-                            case 3:
-                                NextTurn();
-                                listeScore.set(NB_TOURS, NB_QUILLES-quillesRestantes);
-                                listeScoreEtat.set(NB_TOURS, "x");
-                                break;
-                        }
+                    listeScoreEtat.add("x");
+                }
+            }
+            QUILLES -= nombreDeQuillesAbattues;
+            if (TURN_N == TURN_MAX-1) {
+                if (listeScoreEtat.get(TURN_MAX-1).equals("STRIKE")) {
+                    if (ROUND < 3) {
+                        ROUND++;
+                    } else {
+                        NextTurn();
                     }
                 }
-            } else {
-                System.err.println("do u even know how 2 bowling");
             }
+            if (ROUND < 2) {
+                ROUND++;
+            } else {
+                NextTurn();
+            }
+            
 	}
 
 	/**
@@ -133,16 +80,18 @@ public class SinglePlayerGame {
 	 */
 	public int score() {
             int score = 0;
-            for (int i = 0; i < NB_TOURS; i++) {
-                if (listeScoreEtat.get(i).equals("x")) {
-                    score += listeScore.get(i);
+            int taille = listeScore.size();
+            for (int i = 0; i < taille; i++) {
+                if (i < taille - 2) {
+                    if (listeScoreEtat.get(i).equals("SPARE")) {
+                        listeScore.set(i+1, 2 * listeScore.get(i+1));
+                    }
+                    if (listeScoreEtat.get(i).equals("STRIKE")) {
+                        listeScore.set(i+1, 2 * listeScore.get(i+1));
+                        listeScore.set(i+2, 2 * listeScore.get(i+2));
+                    }
                 }
-                if (listeScoreEtat.get(i).equals("SPARE")) {
-                    score += 10 + listeScore.get(i+1);
-                }
-                if (listeScoreEtat.get(i).equals("STRIKE")) {
-                    score += 10 + listeScore.get(i+1) + listeScore.get(i+2);
-                }
+                score += listeScore.get(i);
             }
             return score;
 	}
